@@ -1,0 +1,25 @@
+docker build -t valkyrie-prod:v0.0.1 .
+
+
+docker run -p 8080:8080 valkyrie-prod:v0.0.1 &
+
+
+gcloud artifacts repositories create $REPO \
+  --repository-format=docker \
+  --location=$REGION
+
+
+gcloud auth configure-docker ${REGION}-docker.pkg.dev
+
+docker tag valkyrie-prod:v0.0.1 \
+${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/valkyrie-prod:v0.0.1
+
+
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/valkyrie-prod:v0.0.1
+
+
+gcloud container clusters get-credentials valkyrie-dev \
+  --zone us-east4-b
+
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml

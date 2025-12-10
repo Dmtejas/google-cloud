@@ -1,0 +1,185 @@
+Build Infrastructure with Terraform on Google Cloud: Challenge Lab 
+
+Task 1 :
+
+Add the following to the variables.tf file
+
+variable "project_id" {
+    default = "ADD YOUR PROJECT ID"
+}
+
+variable "region" {
+    default = "REGION"
+}
+
+variable "zone" {
+    default = "zone"
+}
+
+Add the following to the main.tf file
+
+terraform {
+    required_providers {
+        google = {
+            source = "hashicorp/google"
+            version = ">= 3.55.0, < 7.0.0"
+        }
+    }
+}
+
+provider "google" {
+    project = var.project_id
+    region = var.region
+    zone = var.zone
+}
+
+module "instances" {
+    source = "./modules/instances"
+}
+
+$ terraform init
+
+Task 2 :
+
+Add the following to the instances.tf file
+
+resource "google_compute_instance" "tf-instance-1" {
+    name = "tf-instance-1"
+    machine_type = "n1-standard-1"
+
+    boot_disk {
+        image = "projects/debian-cloud/global/images/family/debian-11"
+    }
+
+    network_interface {
+        network = "default"
+    }
+
+    //Add the given code in the instruction
+}
+
+resource "google_compute_instance" "tf-instance-2" {
+    name = "tf-instance-2"
+    machine_type = "n1-standard-1"
+
+    boot_disk {
+        image = "projects/debian-cloud/global/images/family/debian-11"
+    }
+
+    network_interface {
+        network = "default"
+    }
+
+    //Add the given code in the instruction
+}
+
+$ terraform import module.instances.google_compute_instance.tf-instance-1 <INSTANCE_ID>
+$ terraform import module.instances.google_compute_instance.tf-instance-2 <INSTANCE_ID>
+
+$ terraform plan
+$ terraform apply
+
+
+Task 3 :
+
+Add this into storage.tf file
+
+resource "google_storage_bucket" "storage_bucket" {
+    name = "BUCKET_NAME"
+    location = "US"
+    force_destroy = true
+    uniform_bucket_level_access = true
+}
+
+Add the following to the main.tf file
+
+module "storage" {
+    source = "./modules/storage"
+}
+
+$ terraform init
+$ terraform apply
+
+Modify the main.tf like mentioned below
+
+terraform {
+    backend "gcs" {
+        bucket = "BUCKET_NAME"
+        prefix = "terraform/state"
+    }
+    required_providers {
+        google = {
+            source = "hashicorp/google"
+            version = ">= 3.55.0, < 7.0.0"
+        }
+    }
+}
+
+//Keep the rest as it is
+
+$ terraform init
+
+Task 4 : 
+Go to instances.tf file and change "n1-standard-1" to "e2-standard-2" for both the instances and add another instance with the given name
+
+Task 5 :
+Remove the new instance and run init and apply command
+
+Task 6 :
+
+Add the following to the main.tf file
+
+module "vpc" {
+    source = "terraform-google-modules/network/google"
+    version = "10.0.0"
+
+    network_name = "ADD NETWORK NAME"
+    project_id = ""
+
+    subnets = [
+        {
+            subnet_name = "subnet-01"
+            subnet_ip = "10.10.10.0/24"
+            subnet_region = "REGION"
+        },
+        {
+            subnet_name = "subnet-02"
+            subnet_ip = "10.10.20.0/24"
+            subnet_region = "REGION"
+        }
+    ]
+}
+
+$ terraform init
+$ terraform apply
+
+Then in the instances.tf file add the following block
+
+network_interface {
+    network = "NETWORK_NAME"
+    subnetwork = "subnet-01"
+}
+
+Same for next instance as well
+
+$ terraform init
+$ terraform apply
+
+Task 7 :
+Add the following to the main.tf file
+
+resource "google_compute_firewall" "tf-firewall" {
+    name = "tf-firewall"
+    source = "projects/PROJECT_ID/global/networks/NETWORK_NAME"
+
+    allow {
+        protocol = "tcp"
+        ports = ["80"]
+    }
+
+    source_ranges = ["0.0.0.0/0"]
+}
+
+$ terraform init
+$ terraform apply
+
